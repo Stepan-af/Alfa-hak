@@ -169,9 +169,9 @@ const stats = computed(() => {
       label: 'Чистая прибыль',
       icon: 'mdi-cash',
       color: trends.net_income.direction === 'up' ? 'success' : trends.net_income.direction === 'down' ? 'error' : 'info',
-      cardColor: trends.net_income.direction === 'up' ? 'success' : trends.net_income.direction === 'down' ? 'error' : 'info',
+      cardColor: (trends.net_income.direction === 'up' ? 'success' : trends.net_income.direction === 'down' ? 'error' : 'info') as 'success' | 'error' | 'info',
       trend: trends.net_income.change_percent !== 0 ? `${trends.net_income.change_percent > 0 ? '+' : ''}${trends.net_income.change_percent}%` : undefined,
-      trendDirection: trends.net_income.direction
+      trendDirection: trends.net_income.direction as 'up' | 'down' | 'neutral'
     },
     {
       value: trends.transaction_count.current,
@@ -180,7 +180,7 @@ const stats = computed(() => {
       color: 'info',
       cardColor: 'info' as const,
       trend: trends.transaction_count.change !== 0 ? `${trends.transaction_count.change > 0 ? '+' : ''}${trends.transaction_count.change}` : undefined,
-      trendDirection: trends.transaction_count.change > 0 ? 'up' : trends.transaction_count.change < 0 ? 'down' : 'neutral'
+      trendDirection: (trends.transaction_count.change > 0 ? 'up' : trends.transaction_count.change < 0 ? 'down' : 'neutral') as 'up' | 'down' | 'neutral'
     },
     {
       value: trends.total_income.current_value,
@@ -189,7 +189,7 @@ const stats = computed(() => {
       color: 'success',
       cardColor: 'success' as const,
       trend: trends.total_income.change_percent !== 0 ? `${trends.total_income.change_percent > 0 ? '+' : ''}${trends.total_income.change_percent}%` : undefined,
-      trendDirection: trends.total_income.direction
+      trendDirection: trends.total_income.direction as 'up' | 'down' | 'neutral'
     },
     {
       value: trends.total_expense.current_value,
@@ -198,7 +198,7 @@ const stats = computed(() => {
       color: 'error',
       cardColor: 'warning' as const,
       trend: trends.total_expense.change_percent !== 0 ? `${trends.total_expense.change_percent > 0 ? '+' : ''}${trends.total_expense.change_percent}%` : undefined,
-      trendDirection: trends.total_expense.direction
+      trendDirection: trends.total_expense.direction as 'up' | 'down' | 'neutral'
     }
   ]
 })

@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   # PostgreSQL Database
   postgres:
@@ -61,7 +63,7 @@ services:
 
   # FastAPI Backend
   api:
-    image: docker.io/stepanpd/alfa-hak-backend:latest
+    image: docker.io/stepanpd/alfa-hak-backend:v1.0.0
     container_name: alfacopilot-api
     ports:
       - "8000:8000"
@@ -81,7 +83,7 @@ services:
 
   # Celery Worker
   celery-worker:
-    image: docker.io/stepanpd/alfa-hak-backend:latest
+    image: docker.io/stepanpd/alfa-hak-backend:v1.0.0
     container_name: alfacopilot-celery
     env_file:
       - .env
@@ -95,7 +97,7 @@ services:
 
   # Vue.js Frontend
   frontend:
-    image: docker.io/stepanpd/alfa-hak-frontend:latest
+    image: docker.io/stepanpd/alfa-hak-frontend:v1.0.0
     container_name: alfacopilot-frontend
     ports:
       - "3000:3000"

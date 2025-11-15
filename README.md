@@ -560,11 +560,122 @@ ALLOWED_ORIGINS = [
 
 7. **Backup БД**: Настроить регулярные бэкапы
 
+## 🚀 Деплой в Production
+
+### Docker Registry Images
+
+Приложение доступно в Docker Hub:
+- **Backend**: `docker.io/stepanpd/alfa-hak-backend:latest`
+- **Frontend**: `docker.io/stepanpd/alfa-hak-frontend:latest`
+
+### Быстрый деплой
+
+```bash
+# 1. Скачать образы из registry
+docker-compose pull
+
+# 2. Запустить production версию
+docker-compose up -d
+
+# 3. Применить миграции
+docker exec alfacopilot-api alembic upgrade head
+
+# 4. Проверить статус
+docker-compose ps
+```
+
+### Сборка и публикация образов
+
+Если вы разработчик и хотите опубликовать новую версию:
+
+```bash
+# 1. Авторизоваться в Docker Hub
+docker login
+
+# 2. Собрать и опубликовать образы
+./build-and-push.sh docker.io/stepanpd v1.0.0
+```
+
+Скрипт `build-and-push.sh` автоматически:
+- Соберёт backend и frontend образы
+- Присвоит версионные теги (v1.0.0) и latest
+- Опубликует в Docker Registry
+
+### Обновление до новой версии
+
+```bash
+# 1. Соберите новые образы
+./build-and-push.sh docker.io/stepanpd v1.0.1
+
+# 2. Обновите docker-compose.yml (замените :latest на :v1.0.1 при необходимости)
+
+# 3. Скачайте новые образы
+docker-compose pull
+
+# 4. Пересоздайте контейнеры
+docker-compose up -d
+
+# 5. Примените миграции (если есть)
+docker exec alfacopilot-api alembic upgrade head
+```
+
+### Production чеклист безопасности
+
+**Обязательно перед production:**
+
+1. **SECRET_KEY**: Сгенерируйте уникальный ключ
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+2. **DEBUG=false**: Отключите debug режим в `.env`
+
+3. **Пароли БД**: Используйте сильные случайные пароли
+
+4. **CORS**: Ограничьте allowed origins в `backend/app/main.py`
+```python
+ALLOWED_ORIGINS = ["https://yourdomain.com"]
+```
+
+5. **HTTPS**: Настройте SSL сертификат в Nginx
+
+6. **Backup**: Настройте регулярные бэкапы PostgreSQL
+```bash
+docker exec alfacopilot-postgres pg_dump -U alfacopilot alfacopilot > backup.sql
+```
+
+### Размеры образов
+
+```bash
+# Проверьте размеры
+docker images | grep alfa-hak
+
+# Ожидаемые размеры:
+# backend: ~500-800 MB
+# frontend: ~150-300 MB (multi-stage build)
+```
+
+### Мониторинг Production
+
+```bash
+# Проверка логов
+docker-compose logs -f api
+docker-compose logs -f frontend
+
+# Статус контейнеров
+docker-compose ps
+
+# Использование ресурсов
+docker stats
+```
+
 ## 🤝 Вклад в проект
 
 Мы приветствуем вклад! См. [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ### Локальная разработка
+
+Для локальной разработки с hot reload:
 
 ```bash
 # Backend
@@ -579,6 +690,29 @@ cd frontend
 npm install
 npm run dev
 ```
+
+**Или используйте docker-compose в dev режиме:**
+
+Создайте `docker-compose.dev.yml` с локальными билдами:
+```yaml
+api:
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  volumes:
+    - ./backend:/app
+  command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+frontend:
+  build:
+    context: ./frontend
+  volumes:
+    - ./frontend:/app
+    - /app/node_modules
+  command: npm run dev -- --host 0.0.0.0
+```
+
+Затем: `docker-compose -f docker-compose.dev.yml up -d`
 
 ## 📄 Лицензия
 
