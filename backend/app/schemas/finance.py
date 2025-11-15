@@ -98,6 +98,25 @@ class FinanceSummary(BaseModel):
     period_end: date_type
 
 
+class TrendData(BaseModel):
+    """Данные тренда для метрики"""
+    current_value: Decimal
+    previous_value: Decimal
+    change_percent: float
+    change_absolute: Decimal
+    direction: str  # 'up', 'down', 'neutral'
+
+
+class FinanceSummaryWithTrends(BaseModel):
+    """Финансовая сводка с трендами"""
+    total_income: TrendData
+    total_expense: TrendData
+    net_income: TrendData
+    transaction_count: dict  # {"current": int, "previous": int, "change": int}
+    current_period: FinanceSummary
+    previous_period: FinanceSummary
+
+
 class MonthlyTrend(BaseModel):
     """Тренд по месяцам"""
     month: str

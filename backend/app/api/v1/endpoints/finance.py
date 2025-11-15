@@ -14,6 +14,7 @@ from app.schemas.finance import (
     FinanceRecordUpdate,
     CSVUploadResponse,
     FinanceSummary,
+    FinanceSummaryWithTrends,
     CashFlowData,
     FinanceInsights,
     FinanceBudget as FinanceBudgetSchema,
@@ -223,6 +224,92 @@ async def get_summary(
         start_date=start_date,
         end_date=end_date
     )
+
+
+@router.get("/summary-with-trends", response_model=FinanceSummaryWithTrends)
+async def get_summary_with_trends(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db_sync)
+):
+    """Получить финансовую сводку с трендами (сравнение с предыдущим периодом)"""
+    from datetime import datetime
+    from decimal import Decimal
+    
+    # Текущий период: текущий месяц
+    today = date.today()
+    current_start = date(today.year, today.month, 1)
+    current_end = today
+    
+    # Предыдущий период: предыдущий месяц
+    if today.month == 1:
+        prev_start = date(today.year - 1, 12, 1)
+        prev_end = date(today.year - 1, 12, 31)
+    else:
+        prev_start = date(today.year, today.month - 1, 1)
+        # Последний день предыдущего месяца
+        prev_end = current_start - timedelta(days=1)
+    
+    # Получаем данные за оба периода
+    current_summary = FinanceService.get_summary(
+        db=db,
+        user_id=current_user.id,
+        start_date=current_start,
+        end_date=current_end
+    )
+    
+    previous_summary = FinanceService.get_summary(
+        db=db,
+        user_id=current_user.id,
+        start_date=prev_start,
+        end_date=prev_end
+    )
+    
+    # Функция для расчёта тренда
+    def calculate_trend(current: Decimal, previous: Decimal) -> dict:
+        change_absolute = current - previous
+        
+        if previous == 0:
+            change_percent = 100.0 if current > 0 else 0.0
+        else:
+            change_percent = float((change_absolute / previous) * 100)
+        
+        if change_percent > 0.5:
+            direction = "up"
+        elif change_percent < -0.5:
+            direction = "down"
+        else:
+            direction = "neutral"
+        
+        return {
+            "current_value": current,
+            "previous_value": previous,
+            "change_percent": round(change_percent, 1),
+            "change_absolute": change_absolute,
+            "direction": direction
+        }
+    
+    # Рассчитываем тренды
+    return {
+        "total_income": calculate_trend(
+            current_summary.total_income,
+            previous_summary.total_income
+        ),
+        "total_expense": calculate_trend(
+            current_summary.total_expense,
+            previous_summary.total_expense
+        ),
+        "net_income": calculate_trend(
+            current_summary.net_income,
+            previous_summary.net_income
+        ),
+        "transaction_count": {
+            "current": current_summary.transaction_count,
+            "previous": previous_summary.transaction_count,
+            "change": current_summary.transaction_count - previous_summary.transaction_count
+        },
+        "current_period": current_summary,
+        "previous_period": previous_summary
+    }
 
 
 @router.get("/cash-flow", response_model=CashFlowData)

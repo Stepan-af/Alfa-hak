@@ -81,6 +81,27 @@ export interface FinanceSummary {
   period_end: string
 }
 
+export interface TrendData {
+  current_value: number
+  previous_value: number
+  change_percent: number
+  change_absolute: number
+  direction: 'up' | 'down' | 'neutral'
+}
+
+export interface FinanceSummaryWithTrends {
+  total_income: TrendData
+  total_expense: TrendData
+  net_income: TrendData
+  transaction_count: {
+    current: number
+    previous: number
+    change: number
+  }
+  current_period: FinanceSummary
+  previous_period: FinanceSummary
+}
+
 // ========== Cash Flow Types ==========
 
 export interface MonthlyTrend {

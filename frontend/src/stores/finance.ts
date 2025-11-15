@@ -6,6 +6,7 @@ import type {
   FinanceRecordCreate,
   FinanceRecordUpdate,
   FinanceSummary,
+  FinanceSummaryWithTrends,
   CashFlowData,
   FinanceInsights,
   FinanceBudget,
@@ -19,6 +20,7 @@ export const useFinanceStore = defineStore('finance', () => {
   // ========== State ==========
   const records = ref<FinanceRecord[]>([])
   const currentSummary = ref<FinanceSummary | null>(null)
+  const summaryWithTrends = ref<FinanceSummaryWithTrends | null>(null)
   const cashFlowData = ref<CashFlowData | null>(null)
   const insights = ref<FinanceInsights | null>(null)
   const budgets = ref<FinanceBudget[]>([])
@@ -148,6 +150,21 @@ export const useFinanceStore = defineStore('finance', () => {
     }
   }
 
+  async function fetchSummaryWithTrends() {
+    try {
+      loading.value = true
+      error.value = null
+      summaryWithTrends.value = await financeAPI.getSummaryWithTrends()
+      // Также обновляем currentSummary для совместимости
+      currentSummary.value = summaryWithTrends.value.current_period
+    } catch (e: any) {
+      error.value = e.response?.data?.detail || 'Ошибка загрузки сводки с трендами'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchCashFlow(months: number = 12) {
     try {
       loading.value = true
@@ -268,6 +285,7 @@ export const useFinanceStore = defineStore('finance', () => {
     // State
     records,
     currentSummary,
+    summaryWithTrends,
     cashFlowData,
     insights,
     budgets,
@@ -291,6 +309,7 @@ export const useFinanceStore = defineStore('finance', () => {
     deleteRecord,
     uploadCSV,
     fetchSummary,
+    fetchSummaryWithTrends,
     fetchCashFlow,
     fetchInsights,
     fetchBudgets,

@@ -2,7 +2,6 @@
   <v-app>
     <!-- App Bar -->
     <v-app-bar
-      v-if="authStore.isAuthenticated"
       elevation="0"
       color="surface"
       class="app-bar"
@@ -31,15 +30,8 @@
         </template>
         <v-list>
           <v-list-item>
-            <v-list-item-title>{{ authStore.userName }}</v-list-item-title>
-            <v-list-item-subtitle>{{ authStore.userEmail }}</v-list-item-subtitle>
-          </v-list-item>
-          <v-divider></v-divider>
-          <v-list-item @click="handleLogout">
-            <v-list-item-title>
-              <v-icon start>mdi-logout</v-icon>
-              Выйти
-            </v-list-item-title>
+            <v-list-item-title>MVP User</v-list-item-title>
+            <v-list-item-subtitle>mvp@local</v-list-item-subtitle>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -47,7 +39,6 @@
 
     <!-- Navigation Drawer -->
     <v-navigation-drawer
-      v-if="authStore.isAuthenticated"
       v-model="drawer"
       color="surface"
       class="navigation-drawer"
@@ -76,14 +67,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useRoute } from 'vue-router'
 import NotificationContainer from '@/components/NotificationContainer.vue'
 import GlobalSearch from '@/components/GlobalSearch.vue'
 
-const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
 
 const drawer = ref(true)
 
@@ -97,22 +85,11 @@ const menuItems = [
 ]
 
 const userInitials = computed(() => {
-  const name = authStore.userName
-  return name
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return 'MU' // MVP User
 })
 
 const isActive = (path: string) => {
   return route.path === path
-}
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/auth')
 }
 </script>
 

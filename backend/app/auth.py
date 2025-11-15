@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -11,7 +12,8 @@ from app.database import get_db_sync
 from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+# Allow requests without Authorization header in MVP mode
+security = HTTPBearer(auto_error=False)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -56,35 +58,38 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db_sync)
 ) -> User:
-    """Get current authenticated user from JWT token"""
-    
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    token = credentials.credentials
-    payload = verify_token(token)
-    
-    if payload is None:
-        raise credentials_exception
-    
-    # Get email from payload (it's stored in both 'email' and 'sub' for user_id)
-    email = payload.get("email")
-    if email is None:
-        raise credentials_exception
-    
-    # Use sync query
-    user = db.query(User).filter(User.email == email).first()
-    
-    if user is None:
-        raise credentials_exception
-    
-    if not user.is_active:  # type: ignore
-        raise HTTPException(status_code=400, detail="Inactive user")
-    
+    """Get current authenticated user from JWT token.
+
+    In MVP mode (no auth), this function will return a default persisted user
+    so downstream endpoints continue to work without requiring tokens.
+    If an Authorization header is provided and valid, the real user is returned.
+    """
+
+    # If credentials provided, try to verify token as before
+    if credentials and getattr(credentials, "credentials", None):
+        token = credentials.credentials
+        payload = verify_token(token)
+
+        if payload is not None:
+            # Get email from payload
+            email = payload.get("email")
+            if email:
+                user = db.query(User).filter(User.email == email).first()
+                if user and getattr(user, "is_active", True):
+                    return user
+
+    # Fallback for MVP: return or create a default dev user
+    mvp_email = settings.MVP_USER_EMAIL
+    user = db.query(User).filter(User.email == mvp_email).first()
+    if user:
+        return user
+
+    # Create a lightweight MVP user
+    user = User(email=mvp_email, full_name="MVP User", is_active=True)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user

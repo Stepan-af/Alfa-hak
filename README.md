@@ -134,27 +134,16 @@ DATABASE_URL=postgresql://alfacopilot:your-secure-password@postgres:5432/alfacop
 # Redis
 REDIS_URL=redis://redis:6379/0
 
-# Email (Magic Link авторизация)
-# Опция 1: Gmail (рекомендуется для тестирования)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password  # Создать в Google Account Settings
-SMTP_FROM=your-email@gmail.com
-
-# Опция 2: Отладочный режим (магические ссылки в логах)
-# DEBUG=true
-# Ссылки будут в: docker logs alfacopilot-api
+# Authentication (MVP)
+# Для режима MVP аутентификация отключена — приложение работает без входа.
+# В production можно включить email/magic-link аутентификацию (см. EMAIL_SETUP.md).
 
 # LLM
 OLLAMA_BASE_URL=http://ollama:11434
 LITELLM_BASE_URL=http://litellm:4000
 ```
 
-**📧 Настройка Email (Magic Link):**
-- Подробная инструкция: [EMAIL_SETUP.md](./EMAIL_SETUP.md)
-- Быстрая настройка Gmail: 5 минут
-- Или используйте `DEBUG=true` для получения ссылок в логах
+<!-- Authentication / Email setup removed for MVP (no auth). -->
 
 ### 3. Запуск всех сервисов
 
@@ -217,11 +206,8 @@ docker exec alfacopilot-api alembic current
 
 Откройте браузер: **http://localhost:3000**
 
-**Первый вход:**
-1. Введите email
-2. Получите Magic Link (в письме или в логах если DEBUG=true)
-3. Кликните на ссылку
-4. Готово! ✅
+**Авторизация:**
+В режиме MVP аутентификация отключена — приложение открыто и доступно без входа. Просто откройте интерфейс и пользуйтесь функциями.
 
 ## 📱 Использование
 
@@ -427,11 +413,7 @@ curl http://localhost:11434/api/generate -d '{
 
 ### Проблема: Magic Link не приходит
 
-1. **Проверить настройки email в .env**
-2. **Посмотреть логи API**: `docker logs alfacopilot-api | grep "Magic link"`
-3. **Если DEBUG=true**: Ссылка будет в логах
-4. **Gmail**: Проверить App Password создан правильно
-5. **Спам**: Проверить папку "Спам"
+Авторизация отключена в MVP; если вы ожидаете magic links — они выводятся в логах при включённом режиме email в production. Для MVP используйте встроенный доступ.
 
 ### Проблема: Навигация не работает
 
@@ -452,9 +434,7 @@ docker-compose up -d --build frontend
 
 ### Основные эндпоинты
 
-**Аутентификация:**
-- `POST /api/v1/auth/request-magic-link` - Запрос Magic Link
-- `GET /api/v1/auth/verify` - Верификация токена
+<!-- Authentication endpoints are available but not required in MVP -->
 
 **Финансы:**
 - `GET /api/v1/finance` - Список транзакций
@@ -499,7 +479,7 @@ Alfa-hak/
 │   │   ├── views/        # Страницы (Home, Finance, Chat, ...)
 │   │   ├── components/   # Компоненты (StatCard, ChatMessage, ...)
 │   │   ├── composables/  # Composables (useAnimations, ...)
-│   │   ├── stores/       # Pinia stores (auth, finance, ...)
+│   │   ├── stores/       # Pinia stores (finance, ...)
 │   │   ├── router/       # Vue Router
 │   │   ├── assets/       # Статика (CSS, изображения)
 │   │   └── design/       # Design tokens (цвета, шрифты)
@@ -680,10 +660,7 @@ make clean
 ## 📡 API Endpoints
 
 ### Authentication
-- `POST /api/v1/auth/login_magic` - Send magic link
-- `POST /api/v1/auth/token` - Exchange token for JWT
-- `GET /api/v1/users/me` - Get current user
-- `POST /api/v1/auth/logout` - Logout
+Authentication is disabled for the MVP — the application is open and most API endpoints are available without login. Authentication-related endpoints exist but are not required in MVP mode.
 
 ### Finance
 - `POST /api/v1/finance/upload_csv` - Upload financial data
@@ -724,42 +701,11 @@ npm run test
 ```
 
 ## 🔐 Authentication Setup
-
-The app uses **Magic Link** authentication (passwordless login via email).
-
-### Quick Setup (Gmail - 5 minutes):
-
-1. **Enable 2FA:** https://myaccount.google.com/security
-2. **Create App Password:** https://myaccount.google.com/apppasswords
-3. **Update `.env`:**
-   ```bash
-   DEBUG=false
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASSWORD=xxxx xxxx xxxx xxxx  # 16-digit app password
-   SMTP_FROM=your-email@gmail.com
-   ```
-4. **Restart API:** `docker restart alfacopilot-api`
-
-### Development Mode (No Email):
-
-Keep `DEBUG=true` in `.env` - magic links will appear in API logs:
-```bash
-docker logs alfacopilot-api --tail 30
-```
-
-📖 **Full guide:** [EMAIL_SETUP.md](./EMAIL_SETUP.md) (Gmail, Mailgun, Yandex options)
-
-### Testing Email:
-```bash
-docker exec -it alfacopilot-api python test_email.py
-```
+Authentication and email/magic-link configuration have been disabled for the MVP. For production use, see `EMAIL_SETUP.md` in the docs (this is disabled by default in the MVP branch).
 
 ## 🔒 Security
 
-- JWT-based authentication
-- Magic-link email authentication
+- Authentication is disabled in MVP (enable in production configuration)
 - HTTPS enforced in production
 - CORS configuration
 - Rate limiting on auth endpoints

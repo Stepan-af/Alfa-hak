@@ -5,6 +5,7 @@ import type {
   FinanceRecordUpdate,
   CSVUploadResponse,
   FinanceSummary,
+  FinanceSummaryWithTrends,
   CashFlowData,
   FinanceInsights,
   FinanceBudget,
@@ -93,6 +94,14 @@ export const financeAPI = {
     end_date?: string
   }): Promise<FinanceSummary> {
     const response = await apiClient.get('/finance/summary', { params })
+    return response.data
+  },
+
+  /**
+   * Получить финансовую сводку с трендами (сравнение с предыдущим периодом)
+   */
+  async getSummaryWithTrends(): Promise<FinanceSummaryWithTrends> {
+    const response = await apiClient.get('/finance/summary-with-trends')
     return response.data
   },
 

@@ -11,7 +11,7 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor - add JWT token
+// Request interceptor - add JWT token (optional for MVP)
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token')
@@ -33,40 +33,7 @@ apiClient.interceptors.response.use(
     return response
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token')
-        
-        if (refreshToken) {
-          // Try to refresh token
-          const response = await axios.post(`${API_URL}/api/v1/auth/refresh`, {
-            refresh_token: refreshToken,
-          })
-
-          const { access_token } = response.data
-          localStorage.setItem('access_token', access_token)
-
-          // Retry original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${access_token}`
-          }
-          return apiClient(originalRequest)
-        }
-      } catch (refreshError) {
-        // Refresh failed - logout
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/auth'
-        return Promise.reject(refreshError)
-      }
-    }
-
-    // Handle other errors
+    // In MVP mode, just pass through errors without auth handling
     const errorMessage = error.response?.data || error.message || 'Unknown error'
     return Promise.reject(errorMessage)
   }

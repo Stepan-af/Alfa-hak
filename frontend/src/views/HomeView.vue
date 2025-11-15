@@ -4,7 +4,7 @@
       <!-- Welcome Section -->
       <div ref="welcomeSection" class="welcome-section mb-12">
         <h1 class="text-h2 font-weight-bold mb-2">
-          Добро пожаловать, {{ authStore.userName }}! 👋
+          Добро пожаловать! 👋
         </h1>
         <p class="text-h6 text-medium-emphasis">
           Чем я могу помочь вам сегодня?
@@ -84,13 +84,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useFinanceStore } from '@/stores/finance'
 import { usePageTransition, useListEnterAnimation, useCardEnterAnimation } from '@/composables/useAnimations'
 import { HeroCard, LoadingSpinner } from '@/components'
 import StatCard from '@/components/StatCard.vue'
 
-const authStore = useAuthStore()
 const financeStore = useFinanceStore()
 
 // Refs for animated elements
@@ -103,7 +101,10 @@ const activitySection = ref<HTMLElement | null>(null)
 // Применяем анимации
 usePageTransition(pageRef)
 
-onMounted(() => {
+onMounted(async () => {
+  // Загружаем данные с трендами
+  await financeStore.fetchSummaryWithTrends()
+  
   // Анимация приветствия
   useCardEnterAnimation(welcomeSection, 0.1)
   
@@ -117,46 +118,87 @@ onMounted(() => {
   useCardEnterAnimation(activitySection, 0.3)
 })
 
-// Загружаем реальные данные
+// Загружаем реальные данные с трендами
 const stats = computed(() => {
-  const netIncomePositive = financeStore.netIncome >= 0
+  const trends = financeStore.summaryWithTrends
+  
+  if (!trends) {
+    return [
+      {
+        value: financeStore.netIncome || 0,
+        label: 'Чистая прибыль',
+        icon: 'mdi-cash',
+        color: 'success',
+        cardColor: 'success' as const,
+        trend: undefined,
+        trendDirection: 'neutral' as const
+      },
+      {
+        value: financeStore.currentSummary?.transaction_count || 0,
+        label: 'Транзакций',
+        icon: 'mdi-swap-horizontal',
+        color: 'info',
+        cardColor: 'info' as const,
+        trend: undefined,
+        trendDirection: 'neutral' as const
+      },
+      {
+        value: financeStore.totalIncome || 0,
+        label: 'Доходы',
+        icon: 'mdi-trending-up',
+        color: 'success',
+        cardColor: 'success' as const,
+        trend: undefined,
+        trendDirection: 'neutral' as const
+      },
+      {
+        value: financeStore.totalExpense || 0,
+        label: 'Расходы',
+        icon: 'mdi-trending-down',
+        color: 'error',
+        cardColor: 'warning' as const,
+        trend: undefined,
+        trendDirection: 'neutral' as const
+      }
+    ]
+  }
   
   return [
     {
-      value: financeStore.netIncome || 0,
+      value: trends.net_income.current_value,
       label: 'Чистая прибыль',
       icon: 'mdi-cash',
-      color: netIncomePositive ? 'success' : 'error',
-      cardColor: netIncomePositive ? ('success' as const) : ('error' as const),
-      trend: netIncomePositive ? '+12.5%' : '-5.2%',
-      trendDirection: netIncomePositive ? ('up' as const) : ('down' as const)
+      color: trends.net_income.direction === 'up' ? 'success' : trends.net_income.direction === 'down' ? 'error' : 'info',
+      cardColor: trends.net_income.direction === 'up' ? 'success' : trends.net_income.direction === 'down' ? 'error' : 'info',
+      trend: trends.net_income.change_percent !== 0 ? `${trends.net_income.change_percent > 0 ? '+' : ''}${trends.net_income.change_percent}%` : undefined,
+      trendDirection: trends.net_income.direction
     },
     {
-      value: financeStore.currentSummary?.transaction_count || 0,
+      value: trends.transaction_count.current,
       label: 'Транзакций',
       icon: 'mdi-swap-horizontal',
       color: 'info',
       cardColor: 'info' as const,
-      trend: '+8',
-      trendDirection: 'up' as const
+      trend: trends.transaction_count.change !== 0 ? `${trends.transaction_count.change > 0 ? '+' : ''}${trends.transaction_count.change}` : undefined,
+      trendDirection: trends.transaction_count.change > 0 ? 'up' : trends.transaction_count.change < 0 ? 'down' : 'neutral'
     },
     {
-      value: financeStore.totalIncome || 0,
+      value: trends.total_income.current_value,
       label: 'Доходы',
       icon: 'mdi-trending-up',
       color: 'success',
       cardColor: 'success' as const,
-      trend: '+15.3%',
-      trendDirection: 'up' as const
+      trend: trends.total_income.change_percent !== 0 ? `${trends.total_income.change_percent > 0 ? '+' : ''}${trends.total_income.change_percent}%` : undefined,
+      trendDirection: trends.total_income.direction
     },
     {
-      value: financeStore.totalExpense || 0,
+      value: trends.total_expense.current_value,
       label: 'Расходы',
       icon: 'mdi-trending-down',
       color: 'error',
       cardColor: 'warning' as const,
-      trend: '+3.2%',
-      trendDirection: 'up' as const
+      trend: trends.total_expense.change_percent !== 0 ? `${trends.total_expense.change_percent > 0 ? '+' : ''}${trends.total_expense.change_percent}%` : undefined,
+      trendDirection: trends.total_expense.direction
     }
   ]
 })
