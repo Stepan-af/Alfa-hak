@@ -1,0 +1,5 @@
+# Ignore SQLAlchemy type checking issues in these files
+app/services/finance_service.py
+app/services/task_service.py  
+app/api/v1/endpoints/finance.py
+app/api/v1/endpoints/marketing.py

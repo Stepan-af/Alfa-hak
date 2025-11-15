@@ -1,0 +1,24 @@
+{
+  "include": ["app", "tests"],
+  "exclude": ["venv", "**/__pycache__", "**/.pytest_cache"],
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportGeneralTypeIssues": false,
+  "reportOptionalMemberAccess": false,
+  "reportUnboundVariable": false,
+  "reportAttributeAccessIssue": false,
+  "reportArgumentType": false,
+  "reportAssignmentType": false,
+  "reportOperatorIssue": false,
+  "reportInvalidTypeForm": false,
+  "pythonPlatform": "Darwin",
+  "executionEnvironments": [
+    {
+      "root": "app"
+    }
+  ]
+}
